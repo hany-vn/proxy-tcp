@@ -1,0 +1,19 @@
+version: 1
+services:
+  - name: nodejs-tcp-server
+    type: web
+    env: node
+    plan: free
+    build:
+      command: npm install
+    start:
+      command: node index.js
+    ports:
+      - port: 14447
+    tcp:
+      port: 14447
+    healthCheck:
+      path: /
+      interval: 30s
+      timeout: 10s
+      retries: 3
