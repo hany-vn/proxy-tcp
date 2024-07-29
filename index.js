@@ -8,10 +8,6 @@ const TARGET_PORT = 14447; // Cổng của máy chủ UDP đích
 // Tạo socket UDP cho máy chủ proxy
 const server = dgram.createSocket('udp4');
 
-// Tùy chỉnh bộ đệm
-server.setRecvBufferSize(8 * 1024 * 1024); // 8 MB
-server.setSendBufferSize(8 * 1024 * 1024); // 8 MB
-
 // Tùy chọn socket
 server.setBroadcast(true); // Bật khả năng gửi broadcast nếu cần
 
