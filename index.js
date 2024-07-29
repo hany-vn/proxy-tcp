@@ -13,7 +13,13 @@ const server = net.createServer((clientSocket) => {
      const targetSocket = net.createConnection(TARGET_PORT, TARGET_HOST, () => {
           console.log("Connected to target server");
      });
-
+     
+     clientSocket.setNoDelay(true);
+     targetSocket.setNoDelay(true);
+     
+     clientSocket.setReceiveBufferSize(8 * 1024 * 1024); // 8 MB
+     targetSocket.setSendBufferSize(8 * 1024 * 1024); // 8 MB
+     
      // // Khi nhận dữ liệu từ client, chuyển tiếp đến máy chủ đích
      // clientSocket.on("data", (data) => {
      //      console.log(`Forwarding data to target server: ${data}`);
