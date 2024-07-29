@@ -16,6 +16,8 @@ const server = net.createServer((clientSocket) => {
      
      clientSocket.setNoDelay(true);
      targetSocket.setNoDelay(true);
+     clientSocket.setKeepAlive(true, 60000*10);
+     targetSocket.setKeepAlive(true, 60000*10);
      
      // clientSocket.setReceiveBufferSize(8 * 1024 * 1024); // 8 MB
      // targetSocket.setSendBufferSize(8 * 1024 * 1024); // 8 MB
