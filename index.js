@@ -1,55 +1,50 @@
 const dgram = require('dgram');
+const net = require('net');
 
-// Cấu hình
 const LOCAL_PORT = 14447; // Cổng của máy chủ proxy UDP
-const TARGET_HOST = '103.67.197.251'; // Địa chỉ IP của máy chủ UDP đích
-const TARGET_PORT = 14447; // Cổng của máy chủ UDP đích
+const TARGET_HOST = '103.67.197.251'; // Địa chỉ IP của máy chủ TCP đích
+const TARGET_PORT = 14447; // Cổng của máy chủ TCP đích
 
-// Tạo một UDP socket để lắng nghe kết nối từ client
-const server = dgram.createSocket('udp4');
-
-// Địa chỉ và cổng của client, cần được lưu trữ để gửi dữ liệu phản hồi
+const udpServer = dgram.createSocket('udp4');
 let clientAddress, clientPort;
 
 // Xử lý khi nhận dữ liệu từ client
-server.on('message', (msg, rinfo) => {
-    // Lưu thông tin địa chỉ client
+udpServer.on('message', (msg, rinfo) => {
     clientAddress = rinfo.address;
     clientPort = rinfo.port;
 
     console.log(`Received message from client: ${msg.toString()} from ${clientAddress}:${clientPort}`);
 
-    // Gửi dữ liệu đến máy chủ đích
-    server.send(msg, TARGET_PORT, TARGET_HOST, (err) => {
-        if (err) {
-            console.error('Error sending message to target server:', err);
-        }
+    // Tạo kết nối TCP đến server đích
+    const tcpClient = net.createConnection(TARGET_PORT, TARGET_HOST, () => {
+        console.log('Connected to target server');
+        tcpClient.write(msg);
     });
-});
 
-// Xử lý khi nhận dữ liệu từ máy chủ đích và gửi lại client
-server.on('message', (msg, rinfo) => {
-    console.log(`Received message from target server: ${msg.toString()} from ${rinfo.address}:${rinfo.port}`);
+    tcpClient.on('data', (data) => {
+        console.log(`Received message from target server: ${data.toString()}`);
+        // Gửi dữ liệu từ server đích trở lại client
+        udpServer.send(data, clientPort, clientAddress, (err) => {
+            if (err) console.error('Error sending message to client:', err);
+        });
+    });
 
-    // Gửi dữ liệu đến client
-    server.send(msg, clientPort, clientAddress, (err) => {
-        if (err) {
-            console.error('Error sending message to client:', err);
-        }
+    tcpClient.on('error', (err) => {
+        console.error('TCP Client error:', err);
+    });
+
+    tcpClient.on('end', () => {
+        console.log('Connection to target server closed');
     });
 });
 
 // Xử lý lỗi
-server.on('error', (err) => {
+udpServer.on('error', (err) => {
     console.error('Server error:', err);
-    server.close();
+    udpServer.close();
 });
 
-// Xử lý khi server bắt đầu lắng nghe
-server.on('listening', () => {
-    const address = server.address();
-    console.log(`UDP proxy server listening on ${address.address}:${address.port}`);
+// Bắt đầu lắng nghe
+udpServer.bind(LOCAL_PORT, () => {
+    console.log(`UDP proxy server listening on port ${LOCAL_PORT}`);
 });
-
-// Bắt đầu lắng nghe trên cổng
-server.bind(LOCAL_PORT);
